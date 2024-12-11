@@ -265,7 +265,7 @@ class Game:
                     self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
                     return False
                 else:
-                    print(GREEN + "You have completed all file-based maps! Moving on to random maps..." + RESET)
+                    print(GREEN + "You have reached the boat! You can end the game by typing 'save' or continue by moving on to random maps..." + RESET)
                     self.map = generate_maze(self.maze_rows, self.maze_cols)
                     self.goal = self.find_goal()
                     self.x, self.y = 0, 0
