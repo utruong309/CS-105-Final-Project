@@ -3,8 +3,27 @@ import json
 import os
 from collections import deque
 
+# ANSI color codes
+RESET = "\033[0m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+MAGENTA = "\033[35m"
+CYAN = "\033[36m"
+WHITE = "\033[37m"
+GRAY = "\033[90m"
+
 def handle_monster():
-    print("\nYou encounter a fearsome monster! You must decide:")
+    print(RED + "\nYou encounter a fearsome monster!" + RESET)
+    print("           (    )")
+    print("          ((((()))")
+    print("          |o\\ /o)|")
+    print("          ( (  _') ")
+    print("           (._.  /\\")
+    print("          ,/___,/  \\")
+    print("          `-----'   " + RESET)
+    print("You must decide:")
     print("- Fight the monster (F)")
     print("- Scare it away (S)")
     print("- Sneak past it (N)")
@@ -12,28 +31,39 @@ def handle_monster():
     while True:
         choice = input("> ").strip().lower()
         if choice == "f":
-            print("You bravely fight the monster and defeat it!")
+            print(GREEN + "You bravely fight the monster and defeat it!" + RESET)
             break
         elif choice == "s":
-            print("You scare the monster away with a loud roar!")
+            print(CYAN + "You scare the monster away with a loud roar!" + RESET)
             break
         elif choice == "n":
-            print("You successfully sneak past the monster.")
+            print(YELLOW + "You successfully sneak past the monster." + RESET)
             break
         else:
             print("Invalid choice. Please choose F, S, or N.")
 
 
 def handle_witches():
-    print("\nYou stumble upon a coven of witches brewing potions!")
+    print(MAGENTA + "\nYou stumble upon a coven of witches brewing potions!" + RESET)
+    print(MAGENTA + "       /\\         /\\\n"
+                    "      {  `---'  }\n"
+                    "      {  O   O  }\n"
+                    "      ~~>  V  <~~\n"
+                    "       \\  \\|/  /\n"
+                    "        `-----'__\n"
+                    "        /     \\  `^\n"
+                    "       {       } |\n"
+                    "       |  \\_/  |/ |\n"
+                    "        \\__/  /(_/\n"
+                    "          (__/ " + RESET)
     print("One witch approaches and says, 'Answer this riddle correctly, and we’ll let you pass.'")
-    print("Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?")
+    print(YELLOW + "Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?" + RESET)
 
     attempts = 0
     while attempts < 2:
         answer = input("> ").strip().lower()
         if answer == "echo":
-            print("Correct! The witches let you pass.")
+            print(GREEN + "Correct! The witches let you pass." + RESET)
             break
         else:
             print("Wrong answer. Try again.")
@@ -43,38 +73,40 @@ def handle_witches():
         while True:
             answer = input("> ").strip().lower()
             if answer == "echo":
-                print("Correct! The witches let you pass.")
+                print(GREEN + "Correct! The witches let you pass." + RESET)
                 break
             else:
                 print("Incorrect. Try again.")
 
 
 def handle_pirates():
-    print("\nYou encounter a band of pirates! They block your way and demand treasure.")
+    print(CYAN + "\nYou encounter a band of pirates! They block your way and demand treasure." + RESET)
+    print(CYAN + "      _~\n   _~ )_)_~\n   \\_~_\\_\\~_\n    ~  \\_)  " + RESET)
     print("- Give them treasure (T)")
     print("- Fight them off (F)")
 
     while True:
         choice = input("> ").strip().lower()
         if choice == "t":
-            print("You give the pirates treasure, and they let you pass.")
+            print(GREEN + "You give the pirates treasure, and they let you pass." + RESET)
             break
         elif choice == "f":
-            print("You fight bravely and defeat the pirates!")
+            print(RED + "You fight bravely and defeat the pirates!" + RESET)
             break
         else:
             print("Invalid choice. Please choose T or F.")
 
 
 def handle_tribe():
-    print("\nYou meet a peaceful tribe deep in the jungle. They challenge you with a riddle.")
+    print(YELLOW + "\nYou meet a peaceful tribe deep in the jungle. They challenge you with a riddle." + RESET)
+    print(YELLOW + "      /^\\    /^\\ \n     {  O}  {  O}\n      \\ /    \\ / \n       X      X  " + RESET)
     print("Riddle: The more you take, the more you leave behind. What am I?")
 
     answer = input("> ").strip().lower()
     if answer == "footsteps":
-        print("Correct! The tribe welcomes you and gives you a blessing.")
+        print(GREEN + "Correct! The tribe welcomes you and gives you a blessing." + RESET)
     else:
-        print("Incorrect. The tribe allows you to leave unharmed.")
+        print(WHITE + "Incorrect. The tribe allows you to leave unharmed." + RESET)
 
 
 def generate_maze(rows, cols):
@@ -214,11 +246,11 @@ class Game:
 
     def goal_reached(self) -> bool:
         if self.get_current_location() == self.goal:
-            print("Congratulations! You've reached the goal!")
+            print(GREEN + "Congratulations! You've reached the goal!" + RESET)
             self.current_map_index += 1
             if self.use_random_maps:
                 # Generate another random map indefinitely
-                print("Generating a new random maze...")
+                print(CYAN + "Generating a new random maze..." + RESET)
                 self.map = generate_maze(self.maze_rows, self.maze_cols)
                 self.goal = self.find_goal()
                 self.x, self.y = 0, 0
@@ -226,16 +258,14 @@ class Game:
                 return False
             else:
                 if self.current_map_index < self.num_file_maps:
-                    # Load next file-based map
-                    print(f"Loading map {self.current_map_index + 1}...")
+                    print(YELLOW + f"Loading map {self.current_map_index + 1}..." + RESET)
                     self.map = self.load_current_map()
                     self.goal = self.find_goal()
                     self.x, self.y = 0, 0
                     self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
                     return False
                 else:
-                    # Switch to random maps now
-                    print("You have completed all file-based maps! Moving on to random maps...")
+                    print(GREEN + "You have completed all file-based maps! Moving on to random maps..." + RESET)
                     self.map = generate_maze(self.maze_rows, self.maze_cols)
                     self.goal = self.find_goal()
                     self.x, self.y = 0, 0
@@ -266,36 +296,57 @@ class Game:
         return False
 
     def print_map(self):
+        # Colorize the map
         for i in range(len(self.map)):
-            row = ''
+            row_str = ""
             for j in range(len(self.map[i])):
                 if (i, j) == (self.x, self.y):
-                    row += 'P'
-                elif self.map[i][j] == 0:
-                    row += '#'
-                elif self.map[i][j] == 2:
-                    row += 'G'
+                    # Player
+                    row_str += BLUE + 'P' + RESET
                 else:
-                    row += '.'
-            print(row)
+                    cell = self.map[i][j]
+                    if cell == 0:
+                        # Wall
+                        row_str += GRAY + '#' + RESET
+                    elif cell == 1:
+                        # Path
+                        row_str += '.'  # Default color (white)
+                    elif cell == 2:
+                        # Goal
+                        row_str += GREEN + 'G' + RESET
+                    elif cell == 3:
+                        # Monster
+                        row_str += RED + 'M' + RESET
+                    elif cell == 4:
+                        # Witches
+                        row_str += MAGENTA + 'W' + RESET
+                    elif cell == 5:
+                        # Pirates
+                        row_str += CYAN + 'R' + RESET
+                    elif cell == 6:
+                        # Tribe
+                        row_str += YELLOW + 'T' + RESET
+            print(row_str)
         print()
 
     def answer_riddle(self):
         riddle = "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?"
-        print("\nA mysterious figure blocks your way and asks the following riddle:")
-        print(f"\"{riddle}\"")
+        print("\n" + MAGENTA + "A mysterious figure blocks your way and asks the following riddle:" + RESET)
+        print(YELLOW + f"\"{riddle}\"" + RESET)
         while True:
             answer = input("Answer: ").strip().lower()
             if answer == "echo":
-                print("Correct! The path is now open.")
+                print(GREEN + "Correct! The path is now open." + RESET)
                 self.riddle_answered = True
                 return True
             else:
-                print("Incorrect. Try again.")
+                print(RED + "Incorrect. Try again." + RESET)
 
     def save_game(self):
         # Prompt for save file name
         filename = input("Enter a filename to save your game: ").strip()
+        if not filename:
+            filename = "savegame.json"
         state = {
             'current_map_index': self.current_map_index,
             'map': self.map,
@@ -311,18 +362,16 @@ class Game:
         }
         with open(filename, 'w') as f:
             json.dump(state, f)
-        print(f"Game saved to {filename}.")
+        print(GREEN + f"Game saved to {filename}." + RESET)
 
 
 def load_game():
     filename = input("Enter the saved game filename: ").strip()
     if not os.path.exists(filename):
-        print("No such save file.")
+        print(RED + "No such save file." + RESET)
         return None
     with open(filename, 'r') as f:
         state = json.load(f)
-    # state contains everything we need
-    # We'll return it and Game.__init__ will handle it.
     return state
 
 
@@ -360,13 +409,13 @@ def main():
             continue
         if direction in ['north', 'south', 'east', 'west']:
             if not game.move(direction):
-                print("You can't move that way.")
+                print(RED + "You can't move that way." + RESET)
             else:
                 if game.goal_reached():
-                    # In this code, random mazes keep coming, no limit unless you implement it as before.
+                    # infinite random mazes continue
                     pass
         else:
-            print("Invalid input. Try again.")
+            print(RED + "Invalid input. Try again." + RESET)
 
 
 if __name__ == "__main__":
