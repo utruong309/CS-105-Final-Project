@@ -1,4 +1,6 @@
 import random
+import json
+import os
 from collections import deque
 
 def handle_monster():
@@ -25,8 +27,7 @@ def handle_monster():
 def handle_witches():
     print("\nYou stumble upon a coven of witches brewing potions!")
     print("One witch approaches and says, 'Answer this riddle correctly, and we’ll let you pass.'")
-    print(
-        "Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?")
+    print("Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?")
 
     attempts = 0
     while attempts < 2:
@@ -154,19 +155,30 @@ def add_special_encounters(maze, count=5):
 
 
 class Game:
-    def __init__(self, map_files, maze_rows=20, maze_cols=50):
+    def __init__(self, map_files, maze_rows=20, maze_cols=50, load_state=None):
         self.map_files = map_files
         self.num_file_maps = len(map_files)
-        self.current_map_index = 0
         self.maze_rows = maze_rows
         self.maze_cols = maze_cols
-        self.use_random_maps = False
 
-        self.map = self.load_current_map()
-        self.x, self.y = 0, 0
-        self.goal = self.find_goal()
-        self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
-        self.riddle_answered = False
+        if load_state:
+            # Load from saved state
+            self.current_map_index = load_state['current_map_index']
+            self.map = load_state['map']
+            self.x = load_state['x']
+            self.y = load_state['y']
+            self.goal = tuple(load_state['goal'])
+            self.visited = load_state['visited']
+            self.riddle_answered = load_state['riddle_answered']
+            self.use_random_maps = load_state['use_random_maps']
+        else:
+            self.current_map_index = 0
+            self.use_random_maps = False
+            self.map = self.load_current_map()
+            self.x, self.y = 0, 0
+            self.goal = self.find_goal()
+            self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
+            self.riddle_answered = False
 
     def load_map(self, filename: str) -> list[list[int]]:
         with open(filename, 'r') as file:
@@ -205,8 +217,7 @@ class Game:
             print("Congratulations! You've reached the goal!")
             self.current_map_index += 1
             if self.use_random_maps:
-                # Once on random maps, you can keep generating indefinitely or stop.
-                # For demonstration, we'll just generate another random map:
+                # Generate another random map indefinitely
                 print("Generating a new random maze...")
                 self.map = generate_maze(self.maze_rows, self.maze_cols)
                 self.goal = self.find_goal()
@@ -282,11 +293,57 @@ class Game:
             else:
                 print("Incorrect. Try again.")
 
+    def save_game(self):
+        # Prompt for save file name
+        filename = input("Enter a filename to save your game: ").strip()
+        state = {
+            'current_map_index': self.current_map_index,
+            'map': self.map,
+            'x': self.x,
+            'y': self.y,
+            'goal': self.goal,
+            'visited': self.visited,
+            'riddle_answered': self.riddle_answered,
+            'use_random_maps': self.use_random_maps,
+            'map_files': self.map_files,
+            'maze_rows': self.maze_rows,
+            'maze_cols': self.maze_cols
+        }
+        with open(filename, 'w') as f:
+            json.dump(state, f)
+        print(f"Game saved to {filename}.")
+
+
+def load_game():
+    filename = input("Enter the saved game filename: ").strip()
+    if not os.path.exists(filename):
+        print("No such save file.")
+        return None
+    with open(filename, 'r') as f:
+        state = json.load(f)
+    # state contains everything we need
+    # We'll return it and Game.__init__ will handle it.
+    return state
+
 
 def main():
     # Initially defined map files
     map_files = ['map1.txt', 'map2.txt', 'map3.txt']
-    game = Game(map_files=map_files, maze_rows=20, maze_cols=50)
+
+    # At startup, give the option to start a new game or load one
+    choice = ''
+    while choice not in ['n', 'l']:
+        choice = input("Do you want to start a New game (N) or Load a saved game (L)? ").strip().lower()
+
+    if choice == 'l':
+        load_state = load_game()
+        if load_state is None:
+            print("Starting a new game instead.")
+            load_state = None
+    else:
+        load_state = None
+
+    game = Game(map_files=map_files, maze_rows=20, maze_cols=50, load_state=load_state)
 
     print("Welcome to the adventure game!")
     game.print_map()
@@ -297,19 +354,20 @@ def main():
 
     while True:
         game.print_map()
-        direction = input("Which direction? (north/south/east/west): ").strip().lower()
+        direction = input("Which direction? (north/south/east/west) or type 'save' to save: ").strip().lower()
+        if direction == 'save':
+            game.save_game()
+            continue
         if direction in ['north', 'south', 'east', 'west']:
             if not game.move(direction):
                 print("You can't move that way.")
             else:
                 if game.goal_reached():
-                    # If goal_reached returns True (in the original scenario), we would break
-                    # but now it always returns False because we keep generating maps.
-                    # If you want to stop after some conditions, you can modify that.
+                    # In this code, random mazes keep coming, no limit unless you implement it as before.
                     pass
         else:
             print("Invalid input. Try again.")
 
+
 if __name__ == "__main__":
     main()
-
