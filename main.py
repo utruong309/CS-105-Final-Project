@@ -1,3 +1,6 @@
+import random
+from collections import deque
+
 def handle_monster():
     print("\nYou encounter a fearsome monster! You must decide:")
     print("- Fight the monster (F)")
@@ -73,11 +76,93 @@ def handle_tribe():
         print("Incorrect. The tribe allows you to leave unharmed.")
 
 
+def generate_maze(rows, cols):
+    # Initialize the grid with walls (0)
+    maze = [[0 for _ in range(cols)] for _ in range(rows)]
+
+    # Starting cell
+    start_x, start_y = 0, 0
+    maze[start_x][start_y] = 1  # Mark as a passage
+
+    # Use a stack for DFS
+    stack = [(start_x, start_y)]
+
+    # Directions for carving paths: (dx, dy)
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    while stack:
+        x, y = stack[-1]
+
+        neighbors = []
+        for dx, dy in directions:
+            nx, ny = x + 2 * dx, y + 2 * dy
+            if 0 <= nx < rows and 0 <= ny < cols and maze[nx][ny] == 0:
+                if maze[x + dx][y + dy] == 0:
+                    neighbors.append((nx, ny, dx, dy))
+
+        if neighbors:
+            nx, ny, dx, dy = random.choice(neighbors)
+            maze[x + dx][y + dy] = 1
+            maze[nx][ny] = 1
+            stack.append((nx, ny))
+        else:
+            stack.pop()
+
+    # Place the goal:
+    goal_x, goal_y = find_farthest_cell(maze, start_x, start_y)
+    maze[goal_x][goal_y] = 2
+
+    # Add special encounters
+    add_special_encounters(maze, count=5)
+
+    return maze
+
+
+def find_farthest_cell(maze, sx, sy):
+    rows = len(maze)
+    cols = len(maze[0])
+    queue = deque([(sx, sy, 0)])
+    visited = set([(sx, sy)])
+    farthest_cell = (sx, sy)
+    max_dist = 0
+
+    while queue:
+        x, y, dist = queue.popleft()
+        if dist > max_dist:
+            max_dist = dist
+            farthest_cell = (x, y)
+
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols:
+                if maze[nx][ny] == 1 and (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    queue.append((nx, ny, dist + 1))
+    return farthest_cell
+
+
+def add_special_encounters(maze, count=5):
+    rows = len(maze)
+    cols = len(maze[0])
+    passages = [(i, j) for i in range(rows) for j in range(cols) if maze[i][j] == 1 and not (i == 0 and j == 0)]
+    random.shuffle(passages)
+    encounter_types = [3, 4, 5, 6]
+    for _ in range(count):
+        if passages:
+            x, y = passages.pop()
+            maze[x][y] = random.choice(encounter_types)
+
+
 class Game:
-    def __init__(self, map_files):
+    def __init__(self, map_files, maze_rows=20, maze_cols=50):
         self.map_files = map_files
+        self.num_file_maps = len(map_files)
         self.current_map_index = 0
-        self.map = self.load_map(self.map_files[self.current_map_index])
+        self.maze_rows = maze_rows
+        self.maze_cols = maze_cols
+        self.use_random_maps = False
+
+        self.map = self.load_current_map()
         self.x, self.y = 0, 0
         self.goal = self.find_goal()
         self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
@@ -87,6 +172,14 @@ class Game:
         with open(filename, 'r') as file:
             rows, cols = map(int, file.readline().split())
             return [[int(char) for char in line.strip()] for line in file]
+
+    def load_current_map(self):
+        # If we still have file-based maps, load from file, else generate a random map
+        if self.current_map_index < self.num_file_maps:
+            return self.load_map(self.map_files[self.current_map_index])
+        else:
+            self.use_random_maps = True
+            return generate_maze(self.maze_rows, self.maze_cols)
 
     def find_goal(self) -> tuple:
         for i, row in enumerate(self.map):
@@ -110,17 +203,34 @@ class Game:
     def goal_reached(self) -> bool:
         if self.get_current_location() == self.goal:
             print("Congratulations! You've reached the goal!")
-            if self.current_map_index < len(self.map_files) - 1:
-                self.current_map_index += 1
-                self.map = self.load_map(self.map_files[self.current_map_index])
+            self.current_map_index += 1
+            if self.use_random_maps:
+                # Once on random maps, you can keep generating indefinitely or stop.
+                # For demonstration, we'll just generate another random map:
+                print("Generating a new random maze...")
+                self.map = generate_maze(self.maze_rows, self.maze_cols)
                 self.goal = self.find_goal()
                 self.x, self.y = 0, 0
                 self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
-                print(f"Moving to map {self.current_map_index + 1}!")
                 return False
             else:
-                print("You've completed all maps! Well done!")
-                return True
+                if self.current_map_index < self.num_file_maps:
+                    # Load next file-based map
+                    print(f"Loading map {self.current_map_index + 1}...")
+                    self.map = self.load_current_map()
+                    self.goal = self.find_goal()
+                    self.x, self.y = 0, 0
+                    self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
+                    return False
+                else:
+                    # Switch to random maps now
+                    print("You have completed all file-based maps! Moving on to random maps...")
+                    self.map = generate_maze(self.maze_rows, self.maze_cols)
+                    self.goal = self.find_goal()
+                    self.x, self.y = 0, 0
+                    self.visited = [[False for _ in range(len(self.map[0]))] for _ in range(len(self.map))]
+                    self.use_random_maps = True
+                    return False
         return False
 
     def can_move(self, direction: str) -> bool:
@@ -163,19 +273,20 @@ class Game:
         riddle = "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?"
         print("\nA mysterious figure blocks your way and asks the following riddle:")
         print(f"\"{riddle}\"")
-        answer = input("Answer: ").strip().lower()
-        if answer == "echo":
-            print("Correct! The path is now open.")
-            self.riddle_answered = True
-            return True
-        else:
-            print("Incorrect. The path remains blocked.")
-            return False
+        while True:
+            answer = input("Answer: ").strip().lower()
+            if answer == "echo":
+                print("Correct! The path is now open.")
+                self.riddle_answered = True
+                return True
+            else:
+                print("Incorrect. Try again.")
 
 
 def main():
+    # Initially defined map files
     map_files = ['map1.txt', 'map2.txt', 'map3.txt']
-    game = Game(map_files)
+    game = Game(map_files=map_files, maze_rows=20, maze_cols=50)
 
     print("Welcome to the adventure game!")
     game.print_map()
@@ -190,11 +301,15 @@ def main():
         if direction in ['north', 'south', 'east', 'west']:
             if not game.move(direction):
                 print("You can't move that way.")
-            elif game.goal_reached():
-                break
+            else:
+                if game.goal_reached():
+                    # If goal_reached returns True (in the original scenario), we would break
+                    # but now it always returns False because we keep generating maps.
+                    # If you want to stop after some conditions, you can modify that.
+                    pass
         else:
             print("Invalid input. Try again.")
 
-
 if __name__ == "__main__":
     main()
+
